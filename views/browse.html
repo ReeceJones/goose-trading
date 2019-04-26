@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<include:include/common.html/>
+<?D
+import std.conv: to;
+// get the items
+auto q = items.find!(DBItem)().array!DBItem;
+long maxPages = calculatePages(q.length);
+// sort the items
+
+// go to the desired page
+string pageStr = getParameter(req.requestURI, "page");
+int page = pageStr.length == 0 ? 1 : pageStr.to!int;
+if (page > maxPages)
+{
+    res.redirect("/browse");
+    return;
+}
+else if (page <= 0)
+{
+    res.redirect("/browse");
+    return;
+}
+auto bounds = getItemsOnPage(page, cast(int)q.length);
+q = q[bounds[0]..bounds[1]];
+/?>
+<html>
+    <head>
+        <title>Goose Trading: Browse</title>
+        <include:include/head.html/>
+    </head>
+    <include:include/navbar.html/>
+    <body>
+        <include:include/body.html/>
+        <section class="section">
+            <div class="container box">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr>
+                            <th><abbr class="clickable" title="Name">Name</abbr></th>
+                            <td><abbr class="clickable" title="StatTrak">StatTrak</abbr></td>
+                            <td><abbr class="clickable" title="Condition">Condition</abbr></td>
+                            <td><abbr class="clickable" title="Volume">Volume</abbr></td>
+                            <td><abbr class="clickable" title="Lowest Price">Lowest Price</abbr></td>
+                            <td><abbr class="clickable" title="Median Price">Median Price</abbr></td>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <nav class="pagination" role="navigation" aria-label="pagination">
+                            <?D
+                                output(a("Previous Page", [
+                                    "class":`"pagination-previous"`,
+                                    "href": "/browse&page=" ~ (page-1).text,
+                                    (page == 1 ? "disabled" : ""):""
+                                ]));
+                                output(a("Next Page", [
+                                    "class":`"pagination-next"`,
+                                    "href": "/browse&page=" ~ (page+1).text,
+                                    (page == maxPages ? "disabled" : ""):""
+                                ]));
+                                
+                            /?>
+                            <ul class="pagination-list">
+                                <!-- <li>
+                                    <a class="pagination-link is-current" aria-label="Page 1">1</a>
+                                </li> -->
+                                <?D
+                                    for (int i = page - 2; i <= page + 2; i++)
+                                    {
+                                        if (i >= 1 && i <= maxPages)
+                                        {
+                                            output(a(i.text, [
+                                                "class":`"pagination-link` ~ (page == i ? " is-current" : "") ~ `"`,
+                                                "href":`"/browse&page=` ~ i.text ~ `"`
+                                            ]));
+                                        }
+                                    }
+                                /?>
+                            </ul>
+                        </nav>
+                    </tfoot>
+                    <tbody>
+                        <?D
+                            foreach(e; q)
+                            {
+                                output(e.toTableRow());
+                            }
+                        /?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </body>
+</html>

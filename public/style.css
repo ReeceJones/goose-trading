@@ -1,0 +1,19 @@
+.semi-title {
+    font-size: 1.25em;
+}
+.centered {
+    position: relative;
+    height: auto;
+    margin: 0 auto;
+}
+.constrain-horizontal {
+    width: 400px;
+}
+.super-title {
+    position: relative;
+    font-size: 8em !important;
+    font-family: 'Staatliches', cursive;
+}
+.clickable:hover {
+    cursor: pointer;
+}

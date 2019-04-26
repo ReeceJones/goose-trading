@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<?D
+import std.string: indexOf;
+/?>
+<html class="has-background-grey-dark">
+    <head>
+        <title>Goose Trading: Create Account</title>
+        <include:include/head.html/>
+    </head>
+    <body>
+        <section class="section">
+            <div class="container">
+                <div class="centered has-text-centered">
+                    <h1 class="title super-title has-text-white">Goose Trading</h1>
+                </div>
+                <br>
+                <div class="centered constrain-horizontal notification is-white">
+                    <h1 class="title has-text-centered">Create Account</h1>
+                    <?D
+                        if (req.requestURI.indexOf("&badcred") >= 0)
+                        {
+                            output(`<div class="notification is-danger">
+                                        <h1 class="subtitle">Error: Invalid username or password.</h1>
+                                    </div>`);
+                        }
+                        else if (req.requestURI.indexOf("&noname") >= 0)
+                        {
+                            output(`<div class="notification is-danger">
+                                        <h1 class="subtitle">Error: Missing username.</h1>
+                                    </div>`); 
+                        }
+                        else if (req.requestURI.indexOf("&nopass") >= 0)
+                        {
+                            output(`<div class="notification is-danger">
+                                        <h1 class="subtitle">Error: Missing password.</h1>
+                                    </div>`);
+                        }
+                        else if (req.requestURI.indexOf("&exists") >= 0)
+                        {
+                            output(`<div class="notification is-danger">
+                                        <h1 class="subtitle">Error: Username already in use.</h1>
+                                    </div>`);
+                        }
+                    /?>
+                    <form method="POST" action="/create">
+                        <div class="field">
+                            <label class="label">Username</label>
+                            <div class="control has-icons-left has-icons-right">
+                                <input class="input is-rounded" placeholder="username" name="username">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Password</label>
+                            <p class="control has-icons-left has-icons-right">
+                                <input class="input is-rounded" type="password" placeholder="password" name="password">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button id="submit-button" class="button is-link" type="submit">Submit</button>
+                            </div>
+                            <a href="/login">login</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <script>
+            $("form").submit(function() {
+                $("#submit-button").addClass("is-loading");
+            });
+        </script>
+    </body>
+</html>

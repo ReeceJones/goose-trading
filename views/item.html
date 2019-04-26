@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<include:include/common.html/>
+<?D
+if (!validateItemURI(req.requestURI[6..$]))
+{
+    res.redirect("/error");
+    return;
+}
+auto item = getItemFromURI(req.requestURI[6..$]);
+if (item == Bson(null))
+{
+    res.redirect("/error");
+    return;
+}
+/?>
+<html>
+    <head>
+        <title>Goose Trading: <?D output(cast(string)item["name"]); /?></title>
+        <include:include/head.html/>
+    </head>
+    <include:include/navbar.html/>
+    <body>
+        <include:include/body.html/>
+        <section class="section">
+            <div class="container">
+                <h1 class="title"><?D output(cast(string)item["name"]); /?></h1>
+                <article class="content">
+                    <?D
+                        output(b("Condition: ") ~ p(cast(string)item["condition"]));
+                        output(b("StatTrak: ") ~ p(cast(bool)item["stattrak"] ? "yes" : "no"));
+                    /?>
+                    <div id="plot"></div>
+                    <?D
+                        // generate plot.ly data
+                        int[] volume;
+                        double[] lowest;
+                        double[] median;
+                        string[] dates;
+                        foreach(doc; item["history"])
+                        {
+                            // output(b("Volume: ") ~ p((cast(int)doc["volume"]).text));
+                            // output(b("Lowest Price: $") ~ p((cast(double)doc["lowest_price"]).text));
+                            // output(b("Median Price: $") ~ p((cast(double)doc["median_price"]).text));
+                            dates ~= cast(string)doc["date"];
+                            volume ~= cast(int)doc["volume"];
+                            lowest ~= cast(double)doc["lowest_price"];
+                            median ~= cast(double)doc["median_price"];
+                        }
+                        string jsonData = "[{";
+                        // volume
+                        jsonData ~= "x: " ~ dates.text ~ ",";
+                        jsonData ~= "y: " ~ volume.text ~ ", name:'volume'},{ x: " ~ dates.text ~ ",";
+                        // lowest price
+                        jsonData ~= "y: " ~ lowest.text ~ ", name:'lowest price'},{ x: " ~ dates.text ~ ",";
+                        // median price
+                        jsonData ~= "y: " ~ median.text;
+
+                        jsonData ~= ", name:'median price'}]";
+                        jsonData.writeln;
+                        output(`
+                        <script>
+                            var data = ` ~ jsonData ~ `;
+                            Plotly.plot( document.getElementById('plot'), data, { showlegend: true }, {staticPlot:true} );
+                        </script>
+                        `);
+                    /?>
+                </article>
+            </div>
+        </section>
+    </body>
+</html>

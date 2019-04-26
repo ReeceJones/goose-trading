@@ -1,0 +1,64 @@
+<?D
+import web.db;
+import tracking.item;
+import tracking.market;
+import std.uri: decode;
+import vibe.data.bson;
+import mood.templates;
+import mood.vibe;
+import std.typecons: Tuple, tuple;
+import web.uri;
+
+enum ITEMSPERPAGE = 25;
+
+long calculatePages(long numItems)
+{
+    return (numItems / ITEMSPERPAGE) + 1;
+}
+
+Tuple!(int, int) getItemsOnPage(int pageNumber, int length)
+{
+    int startIdx = (pageNumber * ITEMSPERPAGE) - ITEMSPERPAGE;
+    int endIdx = (pageNumber * ITEMSPERPAGE) > length ? length : pageNumber * ITEMSPERPAGE;
+    return tuple(startIdx, endIdx);
+}
+
+// used to check if we are logged in or not
+bool loggedIn()
+{
+    if (req.session)
+        return true;
+    return false;
+}
+if (!loggedIn()) 
+{
+    res.redirect("/login");
+    return;
+}
+
+Bson getItemFromURI(string uri)
+{
+    string decoded = uri.decode;
+    string name = decoded[0..decoded.indexOf('(')-1];
+    bool statTrak = decoded.indexOf("StatTrak") >= 0;
+    if (statTrak)
+        name = name[10..$];
+    string condition = decoded[decoded.indexOf('(')+1..$-1];
+    writeln(name);
+    writeln(condition);
+    writeln(statTrak);
+    return priceTracking.findOne(["name": name, "condition": condition]);
+}
+
+bool validateItemURI(string uri)
+{
+    string decoded = uri.decode;
+    decoded.writeln;
+    if (decoded.indexOf('|') == -1
+        || decoded.indexOf('(') == -1
+        || decoded.indexOf(')') == -1)
+        return false;
+    return true;
+}
+
+/?>

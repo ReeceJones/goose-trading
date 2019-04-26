@@ -1,0 +1,15 @@
+{
+	"authors": [
+		"Reece Jones"
+	],
+	"copyright": "Copyright © 2019, Reece Jones",
+	"dependencies": {
+		"mood": "~>0.1.2",
+		"vibe-d": "~>0.8.5",
+		"dauth": "~>0.6.3"
+	},
+	"description": "Automated steam trading system.",
+	"license": "proprietary",
+	"name": "goose-trading",
+	"versions": ["VibeDefaultMain"]
+}

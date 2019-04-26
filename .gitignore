@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/goose-trading
+goose-trading.so
+goose-trading.dylib
+goose-trading.dll
+goose-trading.a
+goose-trading.lib
+goose-trading-test-*
+*.exe
+*.o
+*.obj
+*.lst
