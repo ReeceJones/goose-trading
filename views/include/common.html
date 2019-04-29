@@ -8,8 +8,10 @@ import mood.templates;
 import mood.vibe;
 import std.typecons: Tuple, tuple;
 import web.uri;
+import std.json;
+import std.string;
 
-enum ITEMSPERPAGE = 25;
+enum ITEMSPERPAGE = 30;
 
 long calculatePages(long numItems)
 {
@@ -42,12 +44,12 @@ Bson getItemFromURI(string uri)
     string name = decoded[0..decoded.indexOf('(')-1];
     bool statTrak = decoded.indexOf("StatTrak") >= 0;
     if (statTrak)
-        name = name[10..$];
+        name = name[12..$];
     string condition = decoded[decoded.indexOf('(')+1..$-1];
-    writeln(name);
-    writeln(condition);
-    writeln(statTrak);
-    return priceTracking.findOne(["name": name, "condition": condition]);
+    // writeln("name: ", name);
+    // writeln("condition: ", condition);
+    // writeln("stattrak: ", statTrak);
+    return priceTracking.findOne(Bson(["name": Bson(name), "condition": Bson(condition), "stattrak": Bson(statTrak)]));
 }
 
 bool validateItemURI(string uri)
@@ -59,6 +61,21 @@ bool validateItemURI(string uri)
         || decoded.indexOf(')') == -1)
         return false;
     return true;
+}
+
+void sanitizeY(ref JSONValue[] json, JSONType type)
+{
+    foreach(ref j; json)
+    {
+        if (type == JSONType.float_ && j.floating == 0.0)
+        {
+            j = JSONValue(null);
+        }
+        else if (type == JSONType.integer && j.integer == 0)
+        {
+            j = JSONValue(null);
+        }
+    }
 }
 
 /?>

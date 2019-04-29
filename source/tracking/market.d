@@ -12,7 +12,6 @@ import web.db;
 import vibe.data.bson;
 import vibe.db.mongo.mongo;
 import std.datetime: dur, Clock;
-import std.datetime.stopwatch;
 import vibe.d: runTask, sleep;
 
 // "http://steamcommunity.com/market/priceoverview/?appid=730&currency=3&market_hash_name=StatTrak%E2%84%A2 M4A1-S | Hyper Beast (Minimal Wear)"
@@ -57,7 +56,7 @@ QueryResult queryItem(Item item)
     string content;
     try {
         content = cast(string)get(uri);
-    } catch(HTTPStatusException ex)
+    } catch(Exception ex)
     {
         writeln(ex.msg);
         return QueryResult.init;
@@ -119,6 +118,18 @@ string toTableRow(DBItem item)
     );
 }
 
+string fullyQuallifiedName(DBItem i)
+{
+    string name;
+    if (i.stattrak)
+        name ~= stattrakQSTR;
+    name ~= i.name;
+    name ~= " ";
+    name ~= "(" ~ cast(string)i.condition ~ ")";
+    return name;
+}
+
+
 
 void saveQuery(Item item, QueryResult qr)
 {
@@ -165,8 +176,6 @@ void scanSkins()
     // run our updating function :)
     while (true)
     {
-        auto stopWatch = StopWatch(AutoStart.yes);
-        stopWatch.stop();
         foreach(skin; (cast(string)read("skins.txt")).split("\n"))
         {
             if (skin.length == 0)
@@ -179,13 +188,10 @@ void scanSkins()
                     // i.writeln;
                     auto q = i.queryItem;
                     i.saveQuery(q);
-                    sleep(dur!"msecs"(6000));
+                    sleep(dur!"msecs"(4000));
                 }
             }
         }
-        long msRunning = stopWatch.peek.total!"msecs";
-        writeln("waiting for a bit: ", 1000 * 60 * 60 - msRunning);
-        sleep(dur!"msecs"(1000 * 60 * 60 - msRunning));
     }
 }
 

@@ -17,6 +17,8 @@ if (item == Bson(null))
     <head>
         <title>Goose Trading: <?D output(cast(string)item["name"]); /?></title>
         <include:include/head.html/>
+        <!-- Plot.ly js -->
+        <script src="/plotly-latest.min.js"></script>
     </head>
     <include:include/navbar.html/>
     <body>
@@ -38,29 +40,60 @@ if (item == Bson(null))
                         string[] dates;
                         foreach(doc; item["history"])
                         {
-                            // output(b("Volume: ") ~ p((cast(int)doc["volume"]).text));
-                            // output(b("Lowest Price: $") ~ p((cast(double)doc["lowest_price"]).text));
-                            // output(b("Median Price: $") ~ p((cast(double)doc["median_price"]).text));
                             dates ~= cast(string)doc["date"];
                             volume ~= cast(int)doc["volume"];
                             lowest ~= cast(double)doc["lowest_price"];
                             median ~= cast(double)doc["median_price"];
                         }
-                        string jsonData = "[{";
-                        // volume
-                        jsonData ~= "x: " ~ dates.text ~ ",";
-                        jsonData ~= "y: " ~ volume.text ~ ", name:'volume'},{ x: " ~ dates.text ~ ",";
-                        // lowest price
-                        jsonData ~= "y: " ~ lowest.text ~ ", name:'lowest price'},{ x: " ~ dates.text ~ ",";
-                        // median price
-                        jsonData ~= "y: " ~ median.text;
+                        JSONValue json = parseJSON("{}");
+                        json["x"] = JSONValue(dates);
+                        json["y"] = JSONValue(lowest);
+                        sanitizeY(json["y"].array(), JSONType.float_);
+                        json["name"] = JSONValue("lowest price");
+                        json["mode"] = JSONValue("lines");
+                        json["line"] = JSONValue(JSONValue(["shape": JSONValue("spline"), "width": JSONValue(3), "color": JSONValue("rgb(220, 70, 50)")]));
+                        JSONValue data1 = json;
+                        json = parseJSON("{}");
+                        json["x"] = JSONValue(dates);
+                        json["y"] = JSONValue(median);
+                        sanitizeY(json["y"].array(), JSONType.float_);
+                        json["name"] = JSONValue("median price");
+                        json["mode"] = JSONValue("lines");
+                        json["line"] = JSONValue(JSONValue(["shape": JSONValue("spline"), "width": JSONValue(3), "color": JSONValue("rgb(50, 170, 220)")]));
+                        JSONValue data2 = json;
+                        json = parseJSON("{}");
+                        json["x"] = JSONValue(dates);
+                        json["y"] = JSONValue(volume);
+                        sanitizeY(json["y"].array(), JSONType.integer);
+                        json["name"] = JSONValue("volume");
+                        json["yaxis"] = JSONValue("y2");
+                        json["line"] = JSONValue(JSONValue(["shape": JSONValue("linear"), "width": JSONValue(1),  "color": JSONValue("rgb(100, 100, 100)")]));
+                        JSONValue data3 = json;
 
-                        jsonData ~= ", name:'median price'}]";
-                        jsonData.writeln;
+                        JSONValue plotData = JSONValue([data1, data2, data3]);
+                        // writeln(plotData.toPrettyString());
+                        
                         output(`
                         <script>
-                            var data = ` ~ jsonData ~ `;
-                            Plotly.plot( document.getElementById('plot'), data, { showlegend: true }, {staticPlot:true} );
+                            var data = ` ~ plotData.toString ~ `;
+                            var layout = {
+                                showlegend: true,
+                                yaxis: {
+                                    title: 'price',
+                                    showgrid: false,
+                                    autorange: true,
+                                    rangemode: 'tozero'
+                                },
+                                yaxis2: {
+                                    overlaying: 'y',
+                                    side: 'right',
+                                    title: 'volume',
+                                    showgrid: false,
+                                    autorange: true,
+                                    rangemode: 'tozero'
+                                }
+                            };
+                            Plotly.newPlot( document.getElementById('plot'), data, layout, {staticPlot: true});
                         </script>
                         `);
                     /?>

@@ -3,21 +3,59 @@
 <?D
 import std.conv: to;
 // get the items
-auto q = items.find!(DBItem)().array!DBItem;
+DBItem[] r = items.find!(DBItem)().array!DBItem;
+DBItem[] q;
+string searchVal = getParameter(req.requestURI, "search").toLower;
+string[] searchParams = searchVal.split("+");
+writeln(searchParams);
+foreach(item; r)
+{
+    if (searchParams.length > 0)
+    {
+        string fqn = item.fullyQuallifiedName.toLower;
+        bool match = false;
+        foreach(p; searchParams)
+        {
+            if (fqn.indexOf(p) != -1)
+            {
+                match = true;
+                break;
+            }    
+        }
+        if (match)
+            q ~= item;
+    }
+    else
+        q ~= item;
+}
+
 long maxPages = calculatePages(q.length);
 // sort the items
 
 // go to the desired page
-string pageStr = getParameter(req.requestURI, "page");
-int page = pageStr.length == 0 ? 1 : pageStr.to!int;
+int page;
+string params;
+auto idx = req.requestURI.indexOf('?');
+idx = idx == -1 ? req.requestURI.length : idx;
+if (req.requestURI.length >= 12 && req.requestURI[0..12] == "/browse/page")
+{
+    string pageStr = req.requestURI[12..idx];
+    params = req.requestURI[idx..$];
+    page = pageStr.to!int;
+}
+else
+{
+    params = req.requestURI[idx..$];
+    page = 1;
+}
 if (page > maxPages)
 {
-    res.redirect("/browse");
+    res.redirect("/browse/page1" ~ params);
     return;
 }
 else if (page <= 0)
 {
-    res.redirect("/browse");
+    res.redirect("/browse/page1" ~ params);
     return;
 }
 auto bounds = getItemsOnPage(page, cast(int)q.length);
@@ -31,6 +69,16 @@ q = q[bounds[0]..bounds[1]];
     <include:include/navbar.html/>
     <body>
         <include:include/body.html/>
+        <script>
+            $("#search").submit(function(event) {
+                event.preventDefault();
+                var uri = new URL(window.location);
+                var sort = uri.searchParams.get("sort");
+                var searchVal = $("search-data").val();
+                uri.searchParams.set("search", encodeURIComponent(searchVal));
+                window.location = uri.toString();
+            });
+        </script>
         <section class="section">
             <div class="container box">
                 <table class="table is-fullwidth is-striped is-hoverable">
@@ -45,35 +93,58 @@ q = q[bounds[0]..bounds[1]];
                         </tr>
                     </thead>
                     <tfoot>
-                        <nav class="pagination" role="navigation" aria-label="pagination">
-                            <?D
-                                output(a("Previous Page", [
-                                    "class":`"pagination-previous"`,
-                                    "href": "/browse&page=" ~ (page-1).text,
-                                    (page == 1 ? "disabled" : ""):""
-                                ]));
-                                output(a("Next Page", [
-                                    "class":`"pagination-next"`,
-                                    "href": "/browse&page=" ~ (page+1).text,
-                                    (page == maxPages ? "disabled" : ""):""
-                                ]));
-                                
-                            /?>
+                        <nav class="pagination is-small" role="navigation" aria-label="pagination">
+                            <form id="search">
+                                <div class="field" style="order: 2; margin-bottom: 0;">
+                                    <div class="control has-icons-left">
+                                        <input id="search-data" class="input is-rounded" name="search" placeholder="search">
+                                        <span class="icon is-small is-left">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </form>
                             <ul class="pagination-list">
                                 <!-- <li>
                                     <a class="pagination-link is-current" aria-label="Page 1">1</a>
                                 </li> -->
                                 <?D
-                                    for (int i = page - 2; i <= page + 2; i++)
+                                    output(a(`<i class="fas fa-chevron-left"></i>`, [
+                                        "class":`"pagination-link"`,
+                                        "href": "/browse/page" ~ (page-1).text ~ params,
+                                        (page == 1 ? "disabled" : ""):""
+                                    ]));
+                                    if (page > 2)
+                                    {
+                                        output(a("1", [
+                                                "class":`"pagination-link"`,
+                                                "href":`"/browse/page1` ~ params ~ `"`
+                                            ]));
+                                        output(`<li><span class="pagination-ellipsis">&hellip;</span></li>`);
+                                    }
+                                    for (int i = page - 1; i <= page + 1; i++)
                                     {
                                         if (i >= 1 && i <= maxPages)
                                         {
                                             output(a(i.text, [
                                                 "class":`"pagination-link` ~ (page == i ? " is-current" : "") ~ `"`,
-                                                "href":`"/browse&page=` ~ i.text ~ `"`
+                                                "href":`"/browse/page` ~ i.text ~ params ~ `"`
                                             ]));
                                         }
                                     }
+                                    if (page < maxPages - 2)
+                                    {
+                                        output(`<li><span class="pagination-ellipsis">&hellip;</span></li>`);
+                                        output(a((maxPages).text, [
+                                                "class":`"pagination-link"`,
+                                                "href":`"/browse/page` ~ (maxPages).text ~ params ~ `"`
+                                            ]));
+                                    }
+                                    output(a(`<i class="fas fa-chevron-right"></i>`, [
+                                        "class":`"pagination-link"`,
+                                        "href": "/browse/page" ~ (page+1).text ~ params,
+                                        (page == maxPages ? "disabled" : ""):""
+                                    ]));
                                 /?>
                             </ul>
                         </nav>
